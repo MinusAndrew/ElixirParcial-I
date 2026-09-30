@@ -1,7 +1,8 @@
 defmodule Validacion do
   @kilos_maximos 250
+  @max_dia_cosecha 6
 
-  def validador_pesajes(recolectores, lotes, pesaje) do
+  def validador_pesaje(recolectores, lotes, pesaje) do
     lista_de_codigos =
       Enum.map(recolectores, fn codigo_recolector -> codigo_recolector.codigo end)
 
@@ -32,7 +33,7 @@ defmodule Validacion do
     end
   end
 
-  defp validar_dia(dia) when is_integer(dia) in 1..6 do
+  defp validar_dia(dia) when is_integer(dia) and dia >= 1 and dia <= @max_dia_cosecha do
     {:ok, dia}
   end
 
@@ -40,7 +41,8 @@ defmodule Validacion do
     {:error, :dia_invalido}
   end
 
-  defp validar_kilos(kilos) when is_integer(kilos) in 0..@kilos_maximos do
+  defp validar_kilos(kilos)
+       when (is_integer(kilos) or is_float(kilos)) and kilos > 0 and kilos <= @kilos_maximos do
     {:ok, kilos}
   end
 
