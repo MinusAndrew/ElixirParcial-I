@@ -1,15 +1,78 @@
 defmodule Programa do
+  @moduledoc """
+  Módulo principal que orquesta la ejecución del programa y la interacción con el usuario.
+  Une todas las funciones puras e impuras en un flujo lógico para el parcial.
+  """
+
+  @doc """
+  Función principal que ejecuta todo el flujo de trabajo de la finca cafetera.
+  """
   def main do
-    pesajes = Datos.pesajes()
+    # 1. load the base data, don't touch Datos module as requested
     recolectores = Datos.recolectores()
     lotes = Datos.lotes()
+    pesajes_iniciales = Datos.pesajes()
 
-    {pesajes_validos, _pesajes_invalidos} = obtener_pesajes_validos(pesajes, recolectores, lotes)
+    # 2. B.5: ask the user for one more pesaje just in case they forgot someone
+    pesajes_totales = procesar_pesaje_adicional(pesajes_iniciales, recolectores, lotes)
 
-    quick_check(pesajes_validos, recolectores)
+    # 3. separate the good stuff from the trash, handle errors gracefully
+    {pesajes_validos, _pesajes_invalidos} =
+      obtener_pesajes_validos(pesajes_totales, recolectores, lotes)
+
+    # 4. calculate the payroll for everyone so they don't complain
+    liquidaciones = Liquidacion.liquidar_todos(recolectores, pesajes_validos)
+
+    # 5. show off the reports (prints the shiii)
+    Util.imprimir_mensaje("")
     Reportes.kilos_por_lote(pesajes_validos, lotes)
+    Util.imprimir_mensaje("")
+    Util.imprimir_mensaje(Reportes.mejor_calidad(pesajes_validos, recolectores))
+    Util.imprimir_mensaje("")
+    Util.imprimir_mensaje(Reportes.totales_semana(liquidaciones))
+    Util.imprimir_mensaje("")
+    Util.imprimir_mensaje(Reportes.recolectores_en_todos_los_lotes(pesajes_validos, lotes, recolectores))
+
+    # 6. Parte C: Investigación (show off the keyword lists and maps merge)
+    Util.imprimir_mensaje("\n" <> Reportes.ranking_demostracion(liquidaciones))
+    Util.imprimir_mensaje("\n" <> Reportes.combinar_fincas_demostracion(pesajes_validos) <> "\n")
+
+    # 7. B.5: give the poor guy his receipt interactively
+    codigo = Util.pedir_codigo_desprendible()
+    Util.imprimir_mensaje("")
+    Util.imprimir_mensaje(Reportes.desprendible_pago(recolectores, pesajes_validos, codigo))
   end
 
+  # --- Funciones auxiliares de carga y validación ---
+
+  # parses the extra input and validates it right away
+  defp procesar_pesaje_adicional(pesajes, recolectores, lotes) do
+    case Util.leer_pesaje_adicional() do
+      {:ok, :omitido} ->
+        Util.imprimir_mensaje("No se agregó ningún pesaje.")
+        pesajes
+
+      {:ok, nuevo_pesaje} ->
+        case Validacion.validador_pesaje(recolectores, lotes, nuevo_pesaje) do
+          {:ok, _} ->
+            Util.imprimir_mensaje(
+              "Pesaje agregado: #{nuevo_pesaje.recolector} en #{nuevo_pesaje.lote}, día #{nuevo_pesaje.dia}, #{nuevo_pesaje.kilos} kg, #{Util.formatear_decimal(nuevo_pesaje.verdes, 1)} % de verdes."
+            )
+
+            pesajes ++ [nuevo_pesaje]
+
+          {:error, motivo} ->
+            Util.imprimir_mensaje("Pesaje rechazado: #{motivo}")
+            pesajes
+        end
+
+      {:error, motivo} ->
+        Util.imprimir_mensaje("Pesaje rechazado: #{motivo}")
+        pesajes
+    end
+  end
+
+  # runs the validation over the entire dataset and splits the results
   defp obtener_pesajes_validos(pesajes, recolectores, lotes) do
     {pesajes_validos, pesajes_invalidos} =
       Enum.reduce(pesajes, {[], []}, fn p, {validos, invalidos} ->
@@ -21,59 +84,6 @@ defmodule Programa do
 
     {pesajes_validos, pesajes_invalidos}
   end
-
-  # Todo Check case
-  defp quick_check(pesajes_validos, recolectores) do
-    # 1. Obtener el mapa de nuestro recolector
-    our_recolector = Enum.find(recolectores, fn r -> r.codigo == "R01" end)
-
-    # 2. Filtrar solo los pesajes de R01
-    our_pesajes = Enum.filter(pesajes_validos, fn p -> p.recolector == "R01" end)
-
-    # 3. Kilos totales
-    kilos_total = Enum.sum(Enum.map(our_pesajes, fn p -> p.kilos end))
-
-    # 4. Suma del valor de los pesajes usando Liquidacion.valor_pesaje/1
-    valor_total_pesajes = Enum.sum(Enum.map(our_pesajes, fn p -> Liquidacion.valor_pesaje(p) end))
-
-    # this Agrupar pesajes por día para bono y conteo de días trabajados
-    pesajes_por_dia = Enum.group_by(our_pesajes, fn p -> p.dia end)
-
-    # this Contar días trabajados es contar cuántos días diferentes hay en el mapa
-    count_days = map_size(pesajes_por_dia)
-
-    # 6. Calcular bonificaciones usando bonificacion_productividad
-    suma_bonificacion =
-      Enum.reduce(pesajes_por_dia, 0, fn {_dia, pesajes_del_dia}, total_acumulado ->
-        kilos_del_dia = Enum.sum(Enum.map(pesajes_del_dia, fn p -> p.kilos end))
-        bono = Liquidacion.bonificacion_productividad(kilos_del_dia)
-        total_acumulado + bono
-      end)
-
-    # 7. Calcular el descuento de alimentación
-    descuento_alimentacion =
-      Liquidacion.descuento_alimentacion(count_days, our_recolector.alimentacion)
-
-    # 8. Calcular el total neto
-    total_neto =
-      Liquidacion.liquidacion_total(
-        valor_total_pesajes,
-        suma_bonificacion,
-        descuento_alimentacion
-      )
-
-    # the only thing AI was used
-    IO.inspect(pesajes_por_dia)
-    IO.puts("\n--- QUICK CHECK: #{our_recolector.nombre} (#{our_recolector.codigo}) ---")
-    IO.puts("Kilos totales recogidos: #{kilos_total} kg")
-    IO.puts("Días trabajados: #{count_days}")
-    IO.puts("Suma de pesajes: $#{formatear_numero(valor_total_pesajes)}")
-    IO.puts("Bonificaciones: $#{formatear_numero(suma_bonificacion)}")
-    IO.puts("Alimentación: -$#{formatear_numero(descuento_alimentacion)}")
-    IO.puts("Neto a pagar: $#{formatear_numero(total_neto)}\n")
-  end
-
-  defp formatear_numero(num), do: :erlang.float_to_binary(num, decimals: 2)
 end
 
 Programa.main()
