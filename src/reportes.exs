@@ -77,12 +77,16 @@ defmodule Reportes do
 
   defp cumplio_meta({meta1, meta2, meta3, meta4, meta5, meta6}) do
     metas = [meta1, meta2, meta3, meta4, meta5, meta6]
-    cantidad_si = Enum.count(metas, fn x -> x == "No" end)
+    # count the actual Si's, not the No's
+    cantidad_si = Enum.count(metas, fn x -> x == "Si" end)
 
     cond do
+      # every single day hit the goal
       cantidad_si == 6 -> {"Si", "Si"}
-      cantidad_si > 1 -> {"No", "Si"}
-      !false -> {"No", "No"}
+      # at least one day hit the goal but not all
+      cantidad_si > 0 -> {"No", "Si"}
+      # nobody hit anything lmao
+      true -> {"No", "No"}
     end
   end
 
@@ -225,61 +229,41 @@ defmodule Reportes do
 
   # I'm fucking insane.
   def kilos_por_lote_r2(pesajes, lotes) do
-    # gets lotes per id
+    # gets lotes per id so we can look up names later
     lotes_per_id = Enum.group_by(lotes, fn lote -> lote.id end)
 
-    # lotes of each pesajes
+    # lotes of each pesaje grouped
     lotes_pesaje = Enum.group_by(pesajes, fn pesaje -> pesaje.lote end)
 
-    # lotes per how big the piece of land is, and we make it a map
-    hectareas_lote = Enum.map(lotes, fn lotes -> {lotes.id, lotes.hectareas} end) |> Map.new()
+    # lotes per how big the piece of land is (still in the list, just accessed directly below)
 
-    # we get the total of kilos per land
-    kilos_por_lote =
-      Enum.map(lotes_pesaje, fn {key, pesajes} ->
-        {key, Enum.sum_by(pesajes, fn pesaje -> pesaje.kilos end)}
+    # we get the total of kilos per land — only lotes that actually appear in pesajes
+    kilos_por_lote_map =
+      Enum.map(lotes_pesaje, fn {key, pesajes_lote} ->
+        {key, Enum.sum_by(pesajes_lote, fn pesaje -> pesaje.kilos end)}
       end)
+      |> Map.new()
 
-    # we get each of the possible list of lotes id
-    lista_de_lotes = Enum.map(kilos_por_lote, fn {key, _} -> key end)
-
-    # we create a map for the total of kilos per land
-    map_kilos_lote = Map.new(kilos_por_lote)
-
-    # we merge every result we got
-    mapa_completo_kilos_lote =
-      Map.merge(hectareas_lote, map_kilos_lote, fn _key, hectareas, kilos ->
-        %{hectareas: hectareas, kilos_totales: kilos}
-      end)
-
-    # we build our report
+    # use ALL lotes from the lotes list — not just the ones that had pesajes.
+    # lotes with zero valid pesajes still need to show up with 0 kg
     datos_reportes =
-      Enum.map(lista_de_lotes, fn key_lote ->
-        # we access our current land
-        lote_seleccionado = mapa_completo_kilos_lote[key_lote]
-
-        # extract the data as a tuple
-        {key_lote, lote_seleccionado.hectareas, lote_seleccionado.kilos_totales,
-         lote_seleccionado.kilos_totales / lote_seleccionado.hectareas}
+      Enum.map(lotes, fn lote ->
+        kilos = Map.get(kilos_por_lote_map, lote.id, 0)
+        rendimiento = if lote.hectareas > 0, do: kilos / lote.hectareas, else: 0.0
+        {lote.id, lote.hectareas, kilos, rendimiento}
       end)
       # we sort it by how well it behaves according to kg per land
       |> Enum.sort_by(fn {_lote, _ha, _kg, rendimiento} -> rendimiento end, :desc)
 
-    Util.imprimir_mensaje("R2. Kilos por lote")
-
-    # we start printing each of our tuples based on the id we have, as I forgot to add the name of the piece
-    # of land I got mad and just got from the first map
-    Enum.each(datos_reportes, fn {lote, hectareas_lote, kilos_totales, kilos_hectarea} ->
-      lote_actual = lotes_per_id[lote]
-
-      [%{nombre: nombre_lote}] = lote_actual
-      # prints the shiii
-      Util.imprimir_mensaje(
+    # build the lines as strings instead of printing them directly
+    lineas =
+      Enum.map(datos_reportes, fn {lote_id, hectareas_lote, kilos_totales, kilos_hectarea} ->
+        [%{nombre: nombre_lote}] = lotes_per_id[lote_id]
         " #{nombre_lote} | #{kilos_totales} kg  | #{hectareas_lote} ha | #{Util.formatear_pesos(kilos_hectarea)} kg/ha"
-      )
+      end)
 
-      # madness.
-    end)
+    # return the string, main will print it
+    "R2. Kilos por lote\n" <> Enum.join(lineas, "\n")
   end
 
   # Kilos por día (mapa para C.2)

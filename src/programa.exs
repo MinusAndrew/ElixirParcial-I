@@ -27,7 +27,7 @@ defmodule Programa do
     Util.imprimir_mensaje("")
     Util.imprimir_mensaje(Reportes.reporte_r1(pesajes_invalidos))
     Util.imprimir_mensaje("")
-    Reportes.kilos_por_lote_r2(pesajes_validos, lotes)
+    Util.imprimir_mensaje(Reportes.kilos_por_lote_r2(pesajes_validos, lotes))
     Util.imprimir_mensaje("")
     Util.imprimir_mensaje(Reportes.reporte_r3(pesajes_validos))
     Util.imprimir_mensaje("")
