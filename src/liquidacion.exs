@@ -1,3 +1,4 @@
+# Integrantes Jacobo Londoño Davila, Andrés Camilo Gómez Lozano
 defmodule Liquidacion do
   @moduledoc """
   Módulo puro que contiene las reglas de negocio para liquidar pagos, bonificaciones y descuentos.
@@ -75,7 +76,7 @@ defmodule Liquidacion do
     pesajes_r = Enum.filter(pesajes_validos, fn p -> p.recolector == recolector.codigo end)
     kilos = pesajes_r |> Enum.map(fn p -> p.kilos end) |> Enum.sum()
     pesajes_suma = pesajes_r |> Enum.map(fn p -> valor_pesaje(p) end) |> Enum.sum()
-    
+
     # group his work by day to see if he gets a bonus
     pesajes_por_dia = Enum.group_by(pesajes_r, fn p -> p.dia end)
     dias_trabajados = map_size(pesajes_por_dia)

@@ -1,3 +1,4 @@
+# Integrantes Jacobo Londoño Davila, Andrés Camilo Gómez Lozano
 defmodule Validacion do
   @moduledoc """
   Módulo puro encargado de aplicar las reglas de validación sobre cada pesaje.
