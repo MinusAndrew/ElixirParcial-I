@@ -26,7 +26,7 @@ defmodule Reportes do
     |> Enum.join("\n")
   end
 
-  def reporte_r2(pesajes) do
+  def reporte_r3(pesajes) do
     {kilos1, kilos2, kilos3, kilos4, kilos5, kilos6} = total_kilos_dia(pesajes)
 
     {meta1, meta2, meta3, meta4, meta5, meta6} =
@@ -35,7 +35,7 @@ defmodule Reportes do
     {diaria, una} = cumplio_meta({meta1, meta2, meta3, meta4, meta5, meta6})
 
     "
-    R2. Kilo-tes (Meta: #{@meta_finca} kg) (andres no me mates por poner ki-lotes)
+    R3. Kilo-tes (Meta: #{@meta_finca} kg) (andres no me mates por poner ki-lotes)
     Día 1: #{kilos1} kg -> Cumplio la meta? #{meta1}
     Día 2: #{kilos2} kg -> Cumplio la meta? #{meta2}
     Día 3: #{kilos3} kg -> Cumplio la meta? #{meta3}
@@ -133,10 +133,10 @@ defmodule Reportes do
 
     fila =
       Enum.map(resultados_r4, fn {liq, index} ->
-        pesaje = :erlang.float_to_binary(liq.pesajes, decimals: 2)
-        bono = :erlang.float_to_binary(liq.bonificaciones, decimals: 2)
-        alim = :erlang.float_to_binary(liq.alimentacion, decimals: 2)
-        neto = :erlang.float_to_binary(liq.neto, decimals: 2)
+        pesaje = Util.formatear_pesos(liq.pesajes)
+        bono = Util.formatear_pesos(liq.bonificaciones)
+        alim = Util.formatear_pesos(liq.alimentacion)
+        neto = Util.formatear_pesos(liq.neto)
 
         "#{index}. | #{liq.nombre} | #{liq.kilos} kg | $#{pesaje} | $#{bono} | $#{alim} | $#{neto}"
       end)
@@ -223,31 +223,8 @@ defmodule Reportes do
     encabezado <> texto_dias <> columna_final
   end
 
-  def reporte_r6(pesajes_validos) do
-    pesajes_validos
-    |> Enum.group_by(fn pesaje -> pesaje.recolector end)
-    |> Enum.filter(fn {_codigo, pesajes} -> length(pesajes) >= 3 end)
-    |> Enum.map(fn {codigo, pesajes} ->
-      suma_kilos = Enum.sum(Enum.map(pesajes, fn pesaje -> pesaje.kilos end))
-      suma_ponderada = Enum.sum(Enum.map(pesajes, fn pesaje -> pesaje.verdes * pesaje.kilos end))
-      calidad = suma_ponderada / suma_kilos
-      {codigo, calidad}
-    end)
-    |> Enum.min_by(fn {_codigo, calidad} -> calidad end, fn -> nil end)
-    |> formato_r6()
-  end
-
-  def formato_r6(nil) do
-    "R6. Mejor calidad (mínimo 3 pesajes válidos)\nNadie cumplió el requisito de 3 pesajes válidos"
-  end
-
-  def formato_r6({codigo, calidad}, recolectores) do
-    recolector = Enum.find(recolectores, fn rec -> rec.codigo == codigo end)
-    calidad_formateada = :erlang.float_to_binary(calidad, decimals: 2)
-
-    "R6. Mejor calidad (mínimo 3 pesajes válidos)\n#{recolector.nombre}, con #{calidad_formateada} % de verdes ponderado por kilos"
   # I'm fucking insane.
-  def kilos_por_lote(pesajes, lotes) do
+  def kilos_por_lote_r2(pesajes, lotes) do
     # gets lotes per id
     lotes_per_id = Enum.group_by(lotes, fn lote -> lote.id end)
 
@@ -323,7 +300,7 @@ defmodule Reportes do
   @doc """
   Calcula quién tiene la mejor calidad de café basado en porcentaje de verdes.
   """
-  def mejor_calidad(pesajes_validos, recolectores) do
+  def mejor_calidad_r6(pesajes_validos, recolectores) do
     # group the pesajes by the dude who collected them
     pesajes_por_recolector = Enum.group_by(pesajes_validos, fn p -> p.recolector end)
     # turn the list of recolectores into a map so we can look them up instantly by id
@@ -348,7 +325,9 @@ defmodule Reportes do
             # multiply their green coffee by the kilos to get the total penalty weight
             suma_verdes_kilos = Enum.map(pesajes, fn p -> p.verdes * p.kilos end) |> Enum.sum()
             # calculate the weighted average so we don't divide by zero and blow everything up
-            promedio_ponderado = if suma_kilos > 0, do: suma_verdes_kilos / suma_kilos, else: 0.0
+            promedio_ponderado =
+              if suma_kilos > 0, do: suma_verdes_kilos / suma_kilos, else: 0.0
+
             recolector = recolectores_map[codigo]
             {recolector, promedio_ponderado}
           end)
@@ -520,7 +499,7 @@ defmodule Reportes do
   @doc """
   Suma toda la plata y kilos de la finca y calcula el costo promedio.
   """
-  def totales_semana(liquidaciones) do
+  def totales_semana_r7(liquidaciones) do
     # we just sum everything up like crazy
     # extract the neto from everyone and sum it all
     total_neto = Enum.map(liquidaciones, fn liq -> liq.neto end) |> Enum.sum()
@@ -529,7 +508,9 @@ defmodule Reportes do
     # sum all gross money
     total_bruto = Enum.map(liquidaciones, fn liq -> liq.pesajes_suma end) |> Enum.sum()
     # sum up bonuses
-    total_bonificaciones = Enum.map(liquidaciones, fn liq -> liq.bonificaciones end) |> Enum.sum()
+    total_bonificaciones =
+      Enum.map(liquidaciones, fn liq -> liq.bonificaciones end) |> Enum.sum()
+
     # sum up food discounts
     total_alimentacion = Enum.map(liquidaciones, fn liq -> liq.alimentacion end) |> Enum.sum()
 
