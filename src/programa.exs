@@ -7,6 +7,7 @@ defmodule Programa do
     {pesajes_validos, _pesajes_invalidos} = obtener_pesajes_validos(pesajes, recolectores, lotes)
 
     quick_check(pesajes_validos, recolectores)
+    Reportes.kilos_por_lote(pesajes_validos, lotes)
   end
 
   defp obtener_pesajes_validos(pesajes, recolectores, lotes) do
