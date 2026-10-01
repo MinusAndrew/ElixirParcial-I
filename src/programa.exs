@@ -17,7 +17,7 @@ defmodule Programa do
     pesajes_totales = procesar_pesaje_adicional(pesajes_iniciales, recolectores, lotes)
 
     # 3. separate the good stuff from the trash, handle errors gracefully
-    {pesajes_validos, _pesajes_invalidos} =
+    {pesajes_validos, pesajes_invalidos} =
       obtener_pesajes_validos(pesajes_totales, recolectores, lotes)
 
     # 4. calculate the payroll for everyone so they don't complain
@@ -25,13 +25,24 @@ defmodule Programa do
 
     # 5. show off the reports (prints the shiii)
     Util.imprimir_mensaje("")
-    Reportes.kilos_por_lote(pesajes_validos, lotes)
+    Util.imprimir_mensaje(Reportes.reporte_r1(pesajes_invalidos))
     Util.imprimir_mensaje("")
-    Util.imprimir_mensaje(Reportes.mejor_calidad(pesajes_validos, recolectores))
+    Reportes.kilos_por_lote_r2(pesajes_validos, lotes)
     Util.imprimir_mensaje("")
-    Util.imprimir_mensaje(Reportes.totales_semana(liquidaciones))
+    Util.imprimir_mensaje(Reportes.reporte_r3(pesajes_validos))
     Util.imprimir_mensaje("")
-    Util.imprimir_mensaje(Reportes.recolectores_en_todos_los_lotes(pesajes_validos, lotes, recolectores))
+    Util.imprimir_mensaje(Reportes.reporte_r4(recolectores, pesajes_validos))
+    Util.imprimir_mensaje("")
+    Util.imprimir_mensaje(Reportes.reporte_r5(pesajes_validos, recolectores))
+    Util.imprimir_mensaje("")
+    Util.imprimir_mensaje(Reportes.mejor_calidad_r6(pesajes_validos, recolectores))
+    Util.imprimir_mensaje("")
+    Util.imprimir_mensaje(Reportes.totales_semana_r7(liquidaciones))
+    Util.imprimir_mensaje("")
+
+    Util.imprimir_mensaje(
+      Reportes.recolectores_en_todos_los_lotes(pesajes_validos, lotes, recolectores)
+    )
 
     # 6. Parte C: Investigación (show off the keyword lists and maps merge)
     Util.imprimir_mensaje("\n" <> Reportes.ranking_demostracion(liquidaciones))
