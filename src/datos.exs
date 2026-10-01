@@ -1,3 +1,4 @@
+# Integrantes Jacobo Londoño Davila, Andrés Camilo Gómez Lozano
 defmodule Datos do
   def recolectores do
     [
@@ -124,7 +125,7 @@ defmodule Datos do
       %{recolector: "R05", lote: "L3", dia: 3, kilos: 0, verdes: 2},
       %{recolector: "R06", lote: "L4", dia: 5, kilos: 251, verdes: 3},
       %{recolector: "R07", lote: "L1", dia: 2, kilos: 90, verdes: 101},
-      %{recolector: "R08", lote: "L2", dia: 6, kilos: 75, verdes: -1},
+      %{recolector: "R08", lote: "L2", dia: 6, kilos: 75, verdes: -1}
     ]
   end
 end

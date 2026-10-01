@@ -1,3 +1,4 @@
+# Integrantes Jacobo Londoño Davila, Andrés Camilo Gómez Lozano
 defmodule Reportes do
   @moduledoc """
   Módulo encargado de la generación de reportes y consultas de la finca.
@@ -259,6 +260,7 @@ defmodule Reportes do
     lineas =
       Enum.map(datos_reportes, fn {lote_id, hectareas_lote, kilos_totales, kilos_hectarea} ->
         [%{nombre: nombre_lote}] = lotes_per_id[lote_id]
+
         " #{nombre_lote} | #{kilos_totales} kg  | #{hectareas_lote} ha | #{Util.formatear_pesos(kilos_hectarea)} kg/ha"
       end)
 

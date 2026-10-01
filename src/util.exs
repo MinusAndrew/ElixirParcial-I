@@ -1,3 +1,4 @@
+# Integrantes Jacobo Londoño Davila, Andrés Camilo Gómez Lozano
 defmodule Util do
   @moduledoc """
   Módulo de utilidades impuras para interacción con el usuario (I/O) y formateo de datos.
@@ -15,22 +16,28 @@ defmodule Util do
 
   # read integers with a default fallback
   def leer(mensaje, :integer) do
-    leer_con_parser(mensaje, &Integer.parse/1, 0) # Se pasa la función de parseo y el valor por defecto
+    # Se pasa la función de parseo y el valor por defecto
+    leer_con_parser(mensaje, &Integer.parse/1, 0)
   end
 
   # read float
   def leer(mensaje, :float) do
-    leer_con_parser(mensaje, &Float.parse/1, 0.0) # Para flotantes el valor por defecto es 0.0
+    # Para flotantes el valor por defecto es 0.0
+    leer_con_parser(mensaje, &Float.parse/1, 0.0)
   end
 
   # parser helper so we don't crash when user puts trash
   defp leer_con_parser(mensaje, funcion, valor_defecto) do
-    valor = IO.gets(mensaje)
-    |> String.trim()
-    |> funcion.() # Se ejecuta la función de parseo
+    valor =
+      IO.gets(mensaje)
+      |> String.trim()
+      # Se ejecuta la función de parseo
+      |> funcion.()
 
     case valor do
-      {numero, _} -> numero
+      {numero, _} ->
+        numero
+
       :error ->
         imprimir_error("Error. Se utilizará #{valor_defecto} como valor predeterminado.")
         valor_defecto
@@ -57,7 +64,9 @@ defmodule Util do
   """
   def leer_pesaje_adicional do
     linea =
-      IO.gets("Ingrese un pesaje adicional (recolector;lote;dia;kilos;verdes) o Enter para omitir: ")
+      IO.gets(
+        "Ingrese un pesaje adicional (recolector;lote;dia;kilos;verdes) o Enter para omitir: "
+      )
       |> to_string()
       |> String.trim()
 
@@ -95,7 +104,9 @@ defmodule Util do
 
   defp parse_numero(str) do
     case Float.parse(str) do
-      {num, ""} -> {:ok, num}
+      {num, ""} ->
+        {:ok, num}
+
       _ ->
         case Integer.parse(str) do
           {num, ""} -> {:ok, num * 1.0}

@@ -1,3 +1,4 @@
+# Integrantes Jacobo Londoño Davila, Andrés Camilo Gómez Lozano
 defmodule Programa do
   @moduledoc """
   Módulo principal que orquesta la ejecución del programa y la interacción con el usuario.
